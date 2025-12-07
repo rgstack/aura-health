@@ -91,7 +91,7 @@ const ActionBar = () => {
       return;
     }
     
-    if (!isSyncing && !isSynced) {
+    if (!isSyncing) {
       await triggerSync();
     }
   };

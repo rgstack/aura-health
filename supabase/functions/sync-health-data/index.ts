@@ -51,12 +51,12 @@ serve(async (req) => {
     console.log('User authenticated:', user.id);
 
     // Parse request body
-    const { steps, date, sleep_hours, heart_rate_avg } = await req.json();
+    const { steps, date, sleep_hours, heart_rate_avg, demo_mode } = await req.json();
     const metricDate = date || new Date().toISOString().split('T')[0];
 
-    console.log('Received health data:', { steps, date: metricDate, sleep_hours, heart_rate_avg });
+    console.log('Received health data:', { steps, date: metricDate, sleep_hours, heart_rate_avg, demo_mode });
 
-    // Upsert daily metrics (insert or update if exists for that date)
+    // Insert new metrics (always insert for demo mode to track each sync)
     const { error: metricsError } = await supabase
       .from('daily_metrics')
       .upsert({
@@ -84,22 +84,31 @@ serve(async (req) => {
     if (steps >= REWARD_THRESHOLD) {
       console.log('Steps qualify for reward:', steps, '>=', REWARD_THRESHOLD);
       
-      // Check if reward already granted for this date
-      const { data: existingReward } = await supabase
-        .from('rewards_ledger')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('reason', `Steps goal reached on ${metricDate}`)
-        .maybeSingle();
+      // For demo mode, always grant rewards. For production, check if already granted.
+      let shouldGrantReward = demo_mode;
+      
+      if (!demo_mode) {
+        const { data: existingReward } = await supabase
+          .from('rewards_ledger')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('reason', `Steps goal reached on ${metricDate}`)
+          .maybeSingle();
+        shouldGrantReward = !existingReward;
+      }
 
-      if (!existingReward) {
-        // Insert reward
+      if (shouldGrantReward) {
+        // Insert reward with unique reason for demo mode
+        const reason = demo_mode 
+          ? `Steps goal reached on ${metricDate} at ${new Date().toISOString()}`
+          : `Steps goal reached on ${metricDate}`;
+          
         const { error: rewardError } = await supabase
           .from('rewards_ledger')
           .insert({
             user_id: user.id,
             amount: REWARD_AMOUNT,
-            reason: `Steps goal reached on ${metricDate}`,
+            reason,
           });
 
         if (rewardError) {
