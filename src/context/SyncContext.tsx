@@ -7,6 +7,7 @@ interface SyncContextType {
   isSyncing: boolean;
   triggerSync: () => Promise<void>;
   lastSyncResult: SyncResult | null;
+  currentSteps: number;
 }
 
 interface SyncResult {
@@ -24,21 +25,29 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
   const [isSynced, setIsSynced] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncResult, setLastSyncResult] = useState<SyncResult | null>(null);
+  const [currentSteps, setCurrentSteps] = useState(8432); // Initial demo value
   const { session, refreshProfile } = useAuth();
 
   const triggerSync = async () => {
-    if (isSyncing || isSynced || !session) return;
+    if (isSyncing || !session) return;
     
+    // Reset synced state to allow re-sync
+    setIsSynced(false);
     setIsSyncing(true);
 
     try {
-      // Call the edge function with hardcoded demo data (10,500 steps)
+      // Generate random steps between 10,000 and 15,000 for demo
+      const randomSteps = Math.floor(Math.random() * 5000) + 10000;
+      setCurrentSteps(randomSteps);
+
+      // Call the edge function with demo_mode enabled
       const { data, error } = await supabase.functions.invoke('sync-health-data', {
         body: {
-          steps: 10500,
+          steps: randomSteps,
           date: new Date().toISOString().split('T')[0],
-          sleep_hours: 7.5,
-          heart_rate_avg: 72,
+          sleep_hours: 7 + Math.random() * 2,
+          heart_rate_avg: 65 + Math.floor(Math.random() * 20),
+          demo_mode: true, // Enable demo mode to always grant rewards
         },
       });
 
@@ -66,10 +75,11 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setIsSynced(false);
     setLastSyncResult(null);
+    setCurrentSteps(8432);
   }, [session?.user?.id]);
 
   return (
-    <SyncContext.Provider value={{ isSynced, isSyncing, triggerSync, lastSyncResult }}>
+    <SyncContext.Provider value={{ isSynced, isSyncing, triggerSync, lastSyncResult, currentSteps }}>
       {children}
     </SyncContext.Provider>
   );
