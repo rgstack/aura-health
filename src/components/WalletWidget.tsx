@@ -1,11 +1,16 @@
 import { TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useSync } from '@/context/SyncContext';
+import { useAuth } from '@/context/AuthContext';
 
 const WalletWidget = () => {
-  const { isSynced } = useSync();
+  const { isSynced, lastSyncResult } = useSync();
+  const { profile } = useAuth();
   
-  const balance = isSynced ? 127.00 : 124.50;
+  // Use real data from profile if available, otherwise demo data
+  const baseBalance = profile?.total_earnings ?? 124.50;
+  const balance = isSynced && lastSyncResult ? lastSyncResult.total_earnings : baseBalance;
+  const rewardAmount = lastSyncResult?.reward_amount ?? 0;
   const percentChange = isSynced ? 14 : 12;
   
   // Mini trend data points
@@ -89,15 +94,15 @@ const WalletWidget = () => {
           />
         </svg>
         
-        {/* +$2.50 indicator */}
-        {isSynced && (
+        {/* Reward indicator */}
+        {isSynced && rewardAmount > 0 && (
           <motion.div
             className="absolute top-0 right-0 text-xs font-semibold text-yellow-400"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            +$2.50
+            +${rewardAmount.toFixed(2)}
           </motion.div>
         )}
       </div>

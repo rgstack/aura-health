@@ -14,7 +14,106 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_metrics: {
+        Row: {
+          created_at: string
+          date: string
+          heart_rate_avg: number | null
+          id: string
+          sleep_hours: number | null
+          steps_count: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          heart_rate_avg?: number | null
+          id?: string
+          sleep_hours?: number | null
+          steps_count?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          heart_rate_avg?: number | null
+          id?: string
+          sleep_hours?: number | null
+          steps_count?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_metrics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          current_streak: number
+          full_name: string | null
+          id: string
+          total_earnings: number
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          current_streak?: number
+          full_name?: string | null
+          id: string
+          total_earnings?: number
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          current_streak?: number
+          full_name?: string | null
+          id?: string
+          total_earnings?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rewards_ledger: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          reason: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          reason?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rewards_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

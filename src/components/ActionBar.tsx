@@ -1,25 +1,22 @@
-import { Watch, ChevronRight, Check, Loader2 } from 'lucide-react';
+import { Watch, ChevronRight, Check, Loader2, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSync } from '@/context/SyncContext';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 
 const ActionBar = () => {
-  const { isSynced, isSyncing, triggerSync } = useSync();
+  const { isSynced, isSyncing, triggerSync, lastSyncResult } = useSync();
+  const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const hasShownToast = useRef(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Create success sound
-  useEffect(() => {
-    // Create audio context for success sound
-    audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1sbHV9g4OHh4iHhoeHh4eHh4aGhYWEhIOCgYCAfn18e3p5eHd2dXRzc3JycXFxcXFxcXJycnNzdHV2d3h5ent8fX5/gIGCg4SFhoeIiImJiYmJiYiIh4eGhYSEg4KBgH9+fXx7enl4d3Z1dHNycnFxcXBwcHBwcHFxcXJyc3R1dnd4eXp7fH1+f4CBgoOEhYaHiIiJiYmJiYmIiIeHhoWEg4OCgYB/fn18e3p5eHd2dXRzcnJxcXFwcHBwcHBxcXFycnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iIiYmJiYmJiIiHh4aFhIODgoGAf359fHt6eXh3dnV0c3JycXFxcHBwcHBwcXFxcnJzdHV2d3h5ent8fX5/gIGCg4SFhoeIiImJiYmJiYiIh4eGhYSDgoKBgH9+fXx7enl4d3Z1dHNycnFxcXBwcHBw');
-  }, []);
 
   useEffect(() => {
-    if (isSynced && !hasShownToast.current) {
+    if (isSynced && lastSyncResult?.reward_granted && !hasShownToast.current) {
       hasShownToast.current = true;
       
       // Fire confetti
@@ -72,18 +69,30 @@ const ActionBar = () => {
         console.log('Audio not supported');
       }
 
-      // Show toast
+      // Show toast with real reward data
       toast({
         title: "Activity Verified",
-        description: "+$2.50 Reward added to your wallet!",
+        description: `+$${lastSyncResult.reward_amount.toFixed(2)} Reward added to your wallet!`,
         duration: 5000,
       });
     }
-  }, [isSynced, toast]);
+  }, [isSynced, lastSyncResult, toast]);
 
-  const handleClick = () => {
+  // Reset toast flag when sync state changes
+  useEffect(() => {
+    if (!isSynced) {
+      hasShownToast.current = false;
+    }
+  }, [isSynced]);
+
+  const handleClick = async () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    
     if (!isSyncing && !isSynced) {
-      triggerSync();
+      await triggerSync();
     }
   };
 
@@ -99,7 +108,19 @@ const ActionBar = () => {
         } text-primary-foreground`}
       >
         <AnimatePresence mode="wait">
-          {isSyncing ? (
+          {!user ? (
+            <motion.div
+              key="signin"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="flex items-center"
+            >
+              <LogIn className="w-5 h-5 md:w-6 md:h-6 mr-3" />
+              <span>Sign In to Sync</span>
+              <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+            </motion.div>
+          ) : isSyncing ? (
             <motion.div
               key="syncing"
               initial={{ opacity: 0, scale: 0.8 }}
