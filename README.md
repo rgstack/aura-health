@@ -61,8 +61,8 @@ A gamified wellness prototype. Walk 10,000 steps, earn $2.50. Build streaks. Wat
 
 ```bash
 # 1. Clone
-git clone https://github.com/rgstack/aura-sync.git
-cd aura-sync
+git clone https://github.com/rgstack/aura-health.git
+cd aura-health
 
 # 2. Install
 bun install        # or: npm install
